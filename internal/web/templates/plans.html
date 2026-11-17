@@ -1,0 +1,18 @@
+{{define "content"}}
+<h1>{{t "Plans"}}</h1>
+<div class="grid2">
+  <div class="panel">
+    {{range .D.Plans}}<p><a href="/plans/{{.ID}}"><b>{{.Name}}</b></a></p>
+    {{else}}<p class="muted">{{t "No plans yet."}}</p>{{end}}
+  </div>
+  <div class="panel">
+    <h2 style="margin-top:0">{{t "New plan"}}</h2>
+    <form method="post" action="/plans" class="row">
+      <input name="name" placeholder="{{t "Name"}}" required>
+      <button class="btn primary">{{t "Create"}}</button>
+    </form>
+    <p class="muted">{{t "A new plan starts with everyone's fixed shifts filled in."}}</p>
+    {{if not .Org.People}}<p class="muted">{{t "Start by adding teams and staff."}}</p>{{end}}
+  </div>
+</div>
+{{end}}

@@ -1,0 +1,18 @@
+# Real organisations (personal data) – never commit
+/instances/
+
+# Build output
+/bin/
+/dist/
+*.exe
+*.test
+*.out
+
+# Local env
+.env
+*.local.yaml
+.idea/
+.vscode/
+
+# Local planning notes
+/PLAN.md

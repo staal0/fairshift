@@ -1,0 +1,20 @@
+{{define "content"}}
+<div class="row" style="justify-content:space-between">
+  <h1>{{t "Staff"}}</h1>
+  {{if .Org.Teams}}<a class="btn primary" href="/staff/new">{{t "Add person"}}</a>{{else}}<a class="btn" href="/teams">{{t "Add a team first"}}</a>{{end}}
+</div>
+<div class="panel scroll">
+<table>
+  <tr><th>{{t "Name"}}</th><th>{{t "Short name"}}</th><th>{{teamword}}</th><th class="num">{{t "Hours per week"}}</th><th>{{t "Fixed shifts"}}</th></tr>
+  {{range .Org.People}}
+  <tr>
+    <td><a href="/staff/{{.ID}}">{{.Name}}</a></td>
+    <td>{{.Short}}</td>
+    <td>{{with $.Org.Team .Team}}<span class="dot" style="background:{{.Color}}"></span>{{.Name}}{{end}}</td>
+    <td class="num">{{dur .WeeklyMinutes}}</td>
+    <td class="muted">{{if .IsFixed}}{{t "yes"}}{{end}}</td>
+  </tr>
+  {{else}}<tr><td colspan="5" class="muted">{{t "No staff yet."}}</td></tr>{{end}}
+</table>
+</div>
+{{end}}

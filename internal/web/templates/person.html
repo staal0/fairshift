@@ -1,0 +1,27 @@
+{{define "content"}}
+{{$p := .D.P}}
+<p><a href="/staff">← {{t "Staff"}}</a></p>
+<h1>{{if .D.New}}{{t "New person"}}{{else}}{{$p.Name}}{{end}}</h1>
+<form method="post" action="/staff/{{if .D.New}}new{{else}}{{$p.ID}}{{end}}" class="panel" style="max-width:760px">
+  <div class="grid2">
+    <label class="field"><span>{{t "Name"}}</span><input name="name" value="{{$p.Name}}" required></label>
+    <label class="field"><span>{{t "Short name"}}</span><input name="short" value="{{$p.Short}}" placeholder="{{t "first name"}}"></label>
+    <label class="field"><span>{{teamword}}</span>
+      <select name="team">{{range .Org.Teams}}<option value="{{.ID}}" {{if eq .ID $p.Team}}selected{{end}}>{{.Name}}</option>{{end}}</select></label>
+    <label class="field"><span>{{t "Expected hours per week"}}</span><input name="hours" value="{{.D.Hours}}" placeholder="37:00"></label>
+  </div>
+  <label class="field"><span>{{t "Tags"}}</span><input name="tags" value="{{.D.Tags}}" placeholder="first-aid, trainee"></label>
+  <h2>{{t "Fixed shifts"}}</h2>
+  <p class="muted">{{t "Only for people whose hours are fixed. They are filled into new plans and never moved."}}</p>
+  <table style="max-width:420px">
+    {{range .D.Fixed}}<tr><td>{{day .Day}}</td><td><input name="fixed_{{.Day.Key}}" value="{{.Value}}" placeholder="08:15-15:30"></td></tr>{{end}}
+  </table>
+  <p><button class="btn primary">{{t "Save"}}</button></p>
+</form>
+{{if not .D.New}}
+<form method="post" action="/staff/{{$p.ID}}/delete" class="row" style="margin-top:16px">
+  <label class="muted"><input type="checkbox" name="confirm" value="yes"> {{t "confirm"}}</label>
+  <button class="btn danger">{{t "Delete person"}}</button>
+</form>
+{{end}}
+{{end}}

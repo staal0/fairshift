@@ -1,0 +1,28 @@
+{{define "content"}}
+<h1>{{teamword}}</h1>
+<div class="panel scroll" style="max-width:820px">
+<table class="edit">
+  <tr><th>{{t "Name"}}</th><th>{{t "Colour"}}</th><th>{{t "Order"}}</th><th class="num">{{t "People"}}</th><th></th></tr>
+  {{range $i, $tm := .Org.Teams}}
+  <tr>
+    <td><form id="team-{{$tm.ID}}" method="post" action="/teams"><input type="hidden" name="id" value="{{$tm.ID}}"></form>
+        <input form="team-{{$tm.ID}}" name="name" value="{{$tm.Name}}" required></td>
+    <td><input form="team-{{$tm.ID}}" type="color" name="color" value="{{$tm.Color}}"></td>
+    <td><input form="team-{{$tm.ID}}" name="sort" value="{{$i}}" type="number" style="width:70px"></td>
+    <td class="num">{{index $.D.Count $tm.ID}}</td>
+    <td class="actions">
+      <button form="team-{{$tm.ID}}" class="btn">{{t "Save"}}</button>
+      <button form="team-{{$tm.ID}}" class="btn danger" formaction="/teams/{{$tm.ID}}/delete" formnovalidate>{{t "Delete"}}</button>
+    </td>
+  </tr>
+  {{end}}
+  <tr>
+    <td><form id="team-new" method="post" action="/teams"></form>
+        <input form="team-new" name="name" placeholder="{{t "New"}}" required></td>
+    <td><input form="team-new" type="color" name="color" value="#4f46e5"></td>
+    <td></td><td></td>
+    <td class="actions"><button form="team-new" class="btn primary">{{t "Add"}}</button></td>
+  </tr>
+</table>
+</div>
+{{end}}

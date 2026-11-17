@@ -1,0 +1,5 @@
+.git/
+instances/
+bin/
+PLAN.md
+.env

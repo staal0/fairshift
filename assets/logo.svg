@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 470 128" width="470" height="128" role="img" aria-label="fairshift">
+  <defs>
+    <linearGradient id="fs-bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#0EA5A4"/>
+      <stop offset="1" stop-color="#4F46E5"/>
+    </linearGradient>
+    <linearGradient id="fs-tx" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#0EA5A4"/>
+      <stop offset="1" stop-color="#6366F1"/>
+    </linearGradient>
+  </defs>
+  <rect width="128" height="128" rx="30" fill="url(#fs-bg)"/>
+  <rect x="18" y="27" width="56" height="14" rx="7" fill="#FFFFFF"/>
+  <rect x="30" y="47" width="56" height="14" rx="7" fill="#FFFFFF" fill-opacity="0.92"/>
+  <rect x="42" y="67" width="56" height="14" rx="7" fill="#FFFFFF" fill-opacity="0.84"/>
+  <rect x="54" y="87" width="56" height="14" rx="7" fill="#FFFFFF" fill-opacity="0.76"/>
+  <line x1="64" y1="18" x2="64" y2="110" stroke="#FBBF24" stroke-width="5" stroke-linecap="round"/>
+  <text x="152" y="86" font-family="Inter, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif" font-size="66" font-weight="700" letter-spacing="-1.5"><tspan fill="#0F172A">fair</tspan><tspan fill="url(#fs-tx)">shift</tspan></text>
+</svg>

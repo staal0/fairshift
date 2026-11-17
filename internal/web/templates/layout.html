@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="{{.L}}">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{.Title}} · fairshift</title>
+<link rel="icon" href="/static/logo-mark.svg" type="image/svg+xml">
+<script>
+  try { var th = localStorage.getItem("theme"); if (th) document.documentElement.dataset.theme = th; } catch (e) {}
+</script>
+<style>
+:root {
+  --bg: #f8fafc; --panel: #ffffff; --ink: #0f172a; --muted: #64748b; --line: #e2e8f0; --input: #ffffff;
+  --accent: #4f46e5; --accent-ink: #ffffff; --soft: #eef2ff;
+  --err: #dc2626; --err-bg: #fef2f2; --warn: #b45309; --warn-bg: #fffbeb; --ok: #15803d; --ok-bg: #f0fdf4;
+  --duty: #4f46e5; --task: #0e7490; --event: #9333ea;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0b1120; --panel: #111827; --ink: #e5e7eb; --muted: #94a3b8; --line: #1f2937; --input: #0b1120;
+    --accent: #818cf8; --accent-ink: #0b1120; --soft: #1e1b4b;
+    --err: #f87171; --err-bg: #2a1215; --warn: #fbbf24; --warn-bg: #2a1f0a; --ok: #4ade80; --ok-bg: #0b2416;
+    --duty: #6366f1; --task: #0891b2; --event: #a855f7;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0b1120; --panel: #111827; --ink: #e5e7eb; --muted: #94a3b8; --line: #1f2937; --input: #0b1120;
+  --accent: #818cf8; --accent-ink: #0b1120; --soft: #1e1b4b;
+  --err: #f87171; --err-bg: #2a1215; --warn: #fbbf24; --warn-bg: #2a1f0a; --ok: #4ade80; --ok-bg: #0b2416;
+  --duty: #6366f1; --task: #0891b2; --event: #a855f7;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--ink); font: 14px/1.45 Inter, "Segoe UI", Roboto, system-ui, sans-serif; }
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+header.top { display: flex; align-items: center; gap: 18px; padding: 8px 20px; background: var(--panel); border-bottom: 1px solid var(--line);
+  position: sticky; top: 0; z-index: 5; flex-wrap: wrap; }
+header.top .logo { display: block; color: var(--ink); line-height: 0; }
+header.top .logo svg { height: 30px; width: auto; }
+nav { display: flex; gap: 4px; flex-wrap: wrap; flex: 1; }
+nav a { color: var(--muted); padding: 6px 10px; border-radius: 8px; }
+nav a:hover { background: var(--soft); text-decoration: none; color: var(--ink); }
+nav a.on { background: var(--soft); color: var(--ink); font-weight: 600; }
+main { padding: 20px; max-width: 1500px; margin: 0 auto; }
+h1 { font-size: 22px; margin: 0 0 6px; }
+h2 { font-size: 16px; margin: 26px 0 10px; }
+.muted { color: var(--muted); }
+.panel { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 16px; }
+.grid2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 380px), 1fr)); gap: 16px; }
+.scroll { overflow-x: auto; }
+.row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+table { border-collapse: collapse; width: 100%; }
+th, td { padding: 6px 8px; border-bottom: 1px solid var(--line); text-align: left; vertical-align: top; }
+th { font-weight: 600; color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: .03em; }
+td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+input, select, textarea { font: inherit; color: var(--ink); background: var(--input); border: 1px solid var(--line); border-radius: 6px; padding: 5px 8px; }
+input[type=checkbox] { width: auto; }
+input[type=color] { padding: 0; width: 40px; height: 30px; }
+label.field { display: grid; gap: 4px; margin-bottom: 12px; }
+label.field > span { font-weight: 600; font-size: 13px; }
+.checks { display: flex; gap: 10px; flex-wrap: wrap; }
+.checks label { display: inline-flex; gap: 4px; align-items: center; }
+.kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin: 16px 0; max-width: 760px; }
+.kpi { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 10px 16px; }
+.kpi b { display: block; font-size: 24px; }
+.kpi.is-err b { color: var(--err); } .kpi.is-warn b { color: var(--warn); } .kpi.is-ok b { color: var(--ok); }
+.btn { display: inline-block; border: 1px solid var(--line); background: var(--panel); color: var(--ink); border-radius: 8px; padding: 6px 12px; font: inherit; cursor: pointer; }
+.btn:hover { text-decoration: none; background: var(--soft); }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+.btn.danger { color: var(--err); }
+.tabs { display: flex; gap: 6px; flex-wrap: wrap; margin: 8px 0; }
+.tabs a { padding: 5px 12px; border-radius: 999px; border: 1px solid var(--line); background: var(--panel); }
+.tabs a.on { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+.msg { padding: 8px 12px; border-radius: 8px; background: var(--ok-bg); color: var(--ok); border: 1px solid var(--line); margin: 10px 0; }
+.err { padding: 8px 12px; border-radius: 8px; background: var(--err-bg); color: var(--err); border: 1px solid var(--line); margin: 10px 0; }
+.status { font-size: 11px; font-weight: 700; padding: 1px 6px; border-radius: 4px; white-space: nowrap; }
+.status.pass { background: var(--ok-bg); color: var(--ok); }
+.status.error { background: var(--err-bg); color: var(--err); }
+.status.warning { background: var(--warn-bg); color: var(--warn); }
+.status.info, .status.off { background: var(--line); color: var(--muted); }
+.badge { font-size: 11px; font-weight: 700; padding: 0 6px; border-radius: 4px; color: #fff; }
+.badge.duty { background: var(--duty); } .badge.task { background: var(--task); } .badge.event { background: var(--event); }
+.dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 6px; vertical-align: middle; }
+#theme { margin-left: auto; }
+table.edit td { vertical-align: middle; }
+table.edit td input:not([type=color]):not([type=number]), table.edit td select { width: 100%; min-width: 120px; }
+table.edit td.actions { white-space: nowrap; text-align: right; }
+</style>
+</head>
+<body>
+<header class="top">
+  <a class="logo" href="/" aria-label="fairshift">
+    <svg viewBox="0 0 470 128" role="img" aria-hidden="true">
+      <defs>
+        <linearGradient id="fs-bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#0EA5A4"/><stop offset="1" stop-color="#4F46E5"/></linearGradient>
+        <linearGradient id="fs-tx" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#0EA5A4"/><stop offset="1" stop-color="#6366F1"/></linearGradient>
+      </defs>
+      <rect width="128" height="128" rx="30" fill="url(#fs-bg)"/>
+      <rect x="18" y="27" width="56" height="14" rx="7" fill="#FFFFFF"/>
+      <rect x="30" y="47" width="56" height="14" rx="7" fill="#FFFFFF" fill-opacity="0.92"/>
+      <rect x="42" y="67" width="56" height="14" rx="7" fill="#FFFFFF" fill-opacity="0.84"/>
+      <rect x="54" y="87" width="56" height="14" rx="7" fill="#FFFFFF" fill-opacity="0.76"/>
+      <line x1="64" y1="18" x2="64" y2="110" stroke="#FBBF24" stroke-width="5" stroke-linecap="round"/>
+      <text x="152" y="86" font-family="Inter, 'Segoe UI', Roboto, Arial, sans-serif" font-size="66" font-weight="700" letter-spacing="-1.5"><tspan fill="currentColor">fair</tspan><tspan fill="url(#fs-tx)">shift</tspan></text>
+    </svg>
+  </a>
+  <nav>
+    <a href="/plans" {{if eq .Nav "plans"}}class="on"{{end}}>{{t "Plans"}}</a>
+    <a href="/staff" {{if eq .Nav "staff"}}class="on"{{end}}>{{t "Staff"}}</a>
+    <a href="/teams" {{if eq .Nav "teams"}}class="on"{{end}}>{{teamword}}</a>
+    <a href="/activities" {{if eq .Nav "activities"}}class="on"{{end}}>{{t "Activities"}}</a>
+    <a href="/rules" {{if eq .Nav "rules"}}class="on"{{end}}>{{t "Rules"}}</a>
+    <a href="/settings" {{if eq .Nav "settings"}}class="on"{{end}}>{{t "Settings"}}</a>
+  </nav>
+  <button id="theme" class="btn" type="button" title="{{t "Theme"}}"></button>
+</header>
+<main>
+{{if .Msg}}<div class="msg">{{.Msg}}</div>{{end}}
+{{if .Err}}<div class="err">{{.Err}}</div>{{end}}
+{{block "content" .}}{{end}}
+</main>
+<script>
+(function () {
+  var labels = {system: "{{t "System"}}", light: "{{t "Light"}}", dark: "{{t "Dark"}}"};
+  var order = ["system", "light", "dark"];
+  var btn = document.getElementById("theme");
+  function current() { return document.documentElement.dataset.theme || "system"; }
+  function show() { btn.textContent = "◐ " + labels[current()]; }
+  btn.addEventListener("click", function () {
+    var next = order[(order.indexOf(current()) + 1) % order.length];
+    if (next === "system") delete document.documentElement.dataset.theme; else document.documentElement.dataset.theme = next;
+    try { if (next === "system") localStorage.removeItem("theme"); else localStorage.setItem("theme", next); } catch (e) {}
+    show();
+  });
+  show();
+})();
+</script>
+</body>
+</html>

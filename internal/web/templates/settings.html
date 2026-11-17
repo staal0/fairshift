@@ -1,0 +1,25 @@
+{{define "content"}}
+<h1>{{t "Settings"}}</h1>
+<form method="post" action="/settings" class="panel" style="max-width:760px">
+  <label class="field"><span>{{t "Organisation name"}}</span><input name="name" value="{{.Org.Name}}" required></label>
+  <div class="grid2">
+    <label class="field"><span>{{t "Language"}}</span>
+      <select name="lang">{{range .D.Languages}}<option value="{{.}}" {{if eq . $.L}}selected{{end}}>{{if eq . "da"}}Dansk{{else}}English{{end}}</option>{{end}}</select></label>
+    <label class="field"><span>{{t "Word for team"}}</span><input name="team_label" value="{{.Org.TeamLabel}}" placeholder="{{t "Team"}}"></label>
+    <label class="field"><span>{{t "Plan cycle"}}</span>
+      <select name="cycle_weeks">{{range .D.Cycles}}<option value="{{.}}" {{if eq . $.D.Cycle}}selected{{end}}>{{tf "%d week(s)" .}}</option>{{end}}</select></label>
+    <label class="field"><span>{{t "Time steps"}}</span>
+      <select name="time_step">{{range .D.Steps}}<option value="{{.}}" {{if eq . $.D.Step}}selected{{end}}>{{tf "%d minutes" .}}</option>{{end}}</select></label>
+  </div>
+  <h2>{{t "Working days and opening hours"}}</h2>
+  <table>
+    <tr><th>{{t "Day"}}</th><th>{{t "Planned"}}</th><th>{{t "Opening hours"}}</th></tr>
+    {{range .D.Days}}<tr>
+      <td>{{day .Day}}</td>
+      <td><input type="checkbox" name="day_{{.Day.Key}}" {{if .Works}}checked{{end}}></td>
+      <td><input name="opening_{{.Day.Key}}" value="{{.Opening}}" placeholder="06:00-16:45"></td>
+    </tr>{{end}}
+  </table>
+  <p><button class="btn primary">{{t "Save"}}</button></p>
+</form>
+{{end}}

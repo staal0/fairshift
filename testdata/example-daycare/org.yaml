@@ -1,0 +1,180 @@
+# Example organisation: a daycare with three rooms and ten staff.
+# Anonymised reference case - the structure, times and rules come from a
+# real roster; names are invented. Used as the regression fixture.
+organization:
+  name: Example Daycare
+  lang: en
+  time_step: 5
+  days: [mon, tue, wed, thu, fri]
+  cycle_weeks: 2
+  opening:
+    mon: "06:00-16:45"
+    tue: "06:00-16:45"
+    wed: "06:00-16:45"
+    thu: "06:00-16:45"
+    fri: "06:00-16:20"
+
+teams:
+  - {id: a, name: "2 Room A", color: "#7C3AED"}
+  - {id: b, name: "3 Room B", color: "#DC2626"}
+  - {id: c, name: "4 Room C", color: "#DB2777"}
+
+people:
+  - {id: anders,  name: Anders Holm,       team: a, weekly_hours: "36:15"}
+  - {id: birthe,  name: Birthe Lund,       team: a, weekly_hours: "36:15"}
+  - {id: camilla, name: Camilla Krog,      team: a, weekly_hours: "36:15"}
+  - {id: dorte,   name: Dorte Vang,        team: b, weekly_hours: "36:15"}
+  - {id: emma,    name: Emma Skov,         team: b, weekly_hours: "36:15"}
+  - {id: frida,   name: Frida Dahl,        team: b, weekly_hours: "36:15"}
+  - {id: gitte,   name: Gitte Bach,        team: b, weekly_hours: "36:15"}
+  - {id: hanne,   name: Hanne Moerk,        team: c, weekly_hours: "36:15"}
+  - {id: ida,     name: Ida Friis,         team: c, weekly_hours: "36:15"}
+  - id: jonna
+    name: Jonna Berg
+    team: c
+    weekly_hours: "29:00"
+    # Frozen input: identical both weeks. Totals 29:25; the excess is accepted.
+    fixed:
+      mon: "08:15-15:30"
+      tue: "08:15-13:40"
+      wed: "08:15-15:30"
+      thu: "08:15-13:00"
+      fri: "08:15-13:00"
+
+activities:
+  - {id: opener,  kind: duty,  code: "O", label: Opener}
+  - {id: closer,  kind: duty,  code: "C", label: Closer}
+  - {id: office,  kind: task,  code: "K", label: Office hour}
+  - {id: meeting, kind: event, code: "M", label: Room meeting}
+
+rules:
+  # Ref. rule 1 - someone is present for the whole opening span.
+  - id: opening-cover
+    type: coverage
+    label: Opening hours covered
+    params: {window: opening, min: 1}
+
+  # Ref. rules 2, 3, 6 - fixed openers, Friday alternates over the cycle,
+  # the opener works exactly 06:00-13:00.
+  - id: opener
+    type: duty
+    label: Opener 06:00-13:00
+    params:
+      duty: opener
+      shape: {start: "06:00", end: "13:00"}
+      schedule:
+        mon: ida
+        tue: anders
+        wed: hanne
+        thu: frida
+        fri: [emma, camilla]
+
+  # Ref. rules 3, 4, 5 - fixed closers; Thursday is a planning lever.
+  - id: closer
+    type: duty
+    label: Closer until closing
+    params:
+      duty: closer
+      shape: {end: closing}
+      schedule:
+        mon: anders
+        tue: hanne
+        wed: frida
+        thu: ida
+        fri: [camilla, emma]
+      levers: [thu]
+
+  # Ref. rule 7 - nobody starts later than 09:00, on the start-time grid.
+  - id: start-times
+    type: shift_window
+    label: Start between 06:00 and 09:00
+    params:
+      latest_start: "09:00"
+      allowed_starts: ["06:00", "06:45", "07:00", "07:30", "08:00", "08:15", "08:30", "09:00"]
+
+  # Ref. rule 8 - morning ladder: exactly one at each early slot.
+  - {id: ladder-0600, type: time_slot_count, label: "Exactly one starts 06:00", params: {edge: start, at: "06:00", op: exactly, n: 1}}
+  - {id: ladder-0645, type: time_slot_count, label: "Exactly one starts 06:45", params: {edge: start, at: "06:45", op: exactly, n: 1}}
+  - {id: ladder-0700, type: time_slot_count, label: "Exactly one starts 07:00", params: {edge: start, at: "07:00", op: exactly, n: 1}}
+  - {id: ladder-0730, type: time_slot_count, label: "Exactly one starts 07:30", params: {edge: start, at: "07:30", op: exactly, n: 1}}
+
+  # Ref. rule 9 - afternoon ladder: at least one leaves at each slot.
+  - {id: ladder-1530, type: time_slot_count, label: "At least one ends 15:30", params: {edge: end, at: "15:30", op: at_least, n: 1}}
+  - {id: ladder-1545, type: time_slot_count, label: "At least one ends 15:45", params: {edge: end, at: "15:45", op: at_least, n: 1}}
+
+  # Ref. rule 10 - 2-3 early starts per person per week, rooms balanced.
+  - id: early-fair
+    type: fair_distribution
+    label: 2-3 early starts per person per week
+    params:
+      name: early starts
+      metric: {start_before: "08:00"}
+      scope: {exclude_fixed: true}
+      period: week
+      per_person: {min: 2, max: 3}
+  - id: early-team-balance
+    type: fair_distribution
+    label: Early starts balanced between rooms
+    severity: soft
+    params:
+      name: early starts
+      metric: {start_before: "08:00"}
+      period: week
+      scope: {exclude_fixed: true}
+      max_team_spread: 0.5
+
+  # Ref. rule 11 - Room C always has an adult 07:30-15:30.
+  - id: room-c-cover
+    type: coverage
+    label: Room C staffed 07:30-15:30
+    params: {scope: {teams: [c]}, window: "07:30-15:30", min: 1}
+
+  # Ref. rules 12-15 - one office hour per person per week, different days
+  # within the room, the rest of the room present meanwhile.
+  - id: office-hour
+    type: in_shift_task
+    label: Office hour 08:00-09:00
+    params:
+      task: office
+      window: "08:00-09:00"
+      per_week: 1
+      distinct_days_within_team: true
+      others_in_team_present: true
+      team_overrides:
+        c:
+          window: "08:15-09:00"
+          deviation: the part-timer's fixed start is 08:15, so a full hour cannot be covered
+
+  # Ref. rules 16-18 - weekly room meeting; covered by another room.
+  - id: room-meeting
+    type: team_event
+    label: Room meeting 13:00-14:00
+    params:
+      event: meeting
+      window: "13:00-14:00"
+      per_week: 1
+      exempt_fixed: true
+      cover:
+        a: {by: [b], min: 1}
+        b: {by: [a], min: 3}
+        c: {by: [b], min: 1}
+
+  - id: weekly-hours
+    type: hours_target
+    label: Contract hours per week
+    params: {period: week}
+
+  - id: fixed-shifts
+    type: pinned
+    label: Fixed shifts unchanged
+
+deviations:
+  - id: room-b-week2-office
+    rule: office-hour
+    team: b
+    week: 2
+    day: wed
+    reason: >-
+      Room B has four people but only three usable office-hour days in week 2
+      (Wednesday's and Friday's closers are in the room). Escape: move
+      Thursday's closer or let the Friday closer start 08:00.

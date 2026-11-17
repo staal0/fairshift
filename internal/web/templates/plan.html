@@ -1,0 +1,388 @@
+{{define "content"}}
+<style>
+table.roster td, table.roster th { border: 1px solid var(--line); }
+table.roster tr.team td { background: var(--soft); font-weight: 700; }
+table.roster td.cell { min-width: 150px; padding: 4px; }
+table.roster input { width: 100%; border: 1px solid transparent; background: transparent; font: 13px ui-monospace, Menlo, monospace; padding: 4px; }
+table.roster input:focus { border-color: var(--accent); outline: none; background: var(--input); }
+td.lvl-error { background: var(--err-bg); box-shadow: inset 3px 0 var(--err); }
+td.lvl-warning { background: var(--warn-bg); box-shadow: inset 3px 0 var(--warn); }
+th.lvl-error { color: var(--err); } th.lvl-warning { color: var(--warn); }
+.savebar { position: sticky; bottom: 0; z-index: 4; display: flex; gap: 12px; align-items: center; flex-wrap: wrap;
+  padding: 10px 16px calc(10px + env(safe-area-inset-bottom, 0px)); margin-top: 8px;
+  background: var(--panel); border: 1px solid var(--line); border-radius: 10px; box-shadow: 0 -4px 12px rgb(0 0 0 / .06); }
+#save { position: relative; }
+#save .dirty { display: none; position: absolute; top: -4px; right: -4px; width: 10px; height: 10px; border-radius: 50%;
+  background: var(--warn); border: 2px solid var(--panel); }
+form.is-dirty #save .dirty { display: block; }
+.acts { display: flex; gap: 3px; padding: 2px 4px 0; flex-wrap: wrap; }
+.acts { min-height: 18px; }
+.acts label { position: relative; cursor: pointer; line-height: 0; }
+.acts input { position: absolute; inset: 0; opacity: 0; margin: 0; cursor: pointer; }
+.acts span { display: inline-block; min-width: 20px; text-align: center; font-size: 11px; font-weight: 700; line-height: 16px;
+  padding: 0 4px; border-radius: 4px; border: 1px solid var(--line); color: var(--muted); }
+.acts input:checked + span { color: #fff; border-color: transparent; }
+.acts input:checked + span.duty { background: var(--duty); } .acts input:checked + span.task { background: var(--task); }
+.acts input:checked + span.event { background: var(--event); }
+.acts input:focus-visible + span { outline: 2px solid var(--accent); }
+.acts label.unavailable { display: none; }
+.finding { font-size: 11px; color: var(--err); padding: 0 4px; }
+.lvl-warning .finding { color: var(--warn); }
+ul.findings { margin: 0; padding: 0; list-style: none; }
+ul.findings li { margin: 2px 0; }
+table.heat { width: auto; }
+table.heat td { padding: 0; width: 14px; height: 18px; border: 1px solid var(--panel); text-align: center; font-size: 10px; color: #fff; }
+table.heat td.label { width: auto; padding: 0 8px 0 0; color: var(--ink); text-align: left; white-space: nowrap; font-size: 12px; }
+table.heat td.zero { background: var(--err-bg); }
+table.heat td.closed { opacity: .35; }
+table.heat th { font-size: 10px; padding: 0; text-transform: none; letter-spacing: 0; }
+.bar { height: 10px; border-radius: 5px; background: var(--accent); display: inline-block; vertical-align: middle; }
+</style>
+{{$d := .D}}
+<div class="row" style="justify-content:space-between;align-items:flex-start">
+  <div>
+    <form method="post" action="/plans/{{$d.Plan.ID}}/rename" class="row">
+      <input name="name" value="{{$d.Plan.Name}}" style="font-size:20px;font-weight:700;border-color:transparent;background:transparent">
+      <button class="btn">{{t "Rename"}}</button>
+    </form>
+    {{if gt (len $d.Weeks) 1}}<div class="tabs">{{range $d.Weeks}}<a href="?week={{.}}" {{if eq . $d.Week}}class="on"{{end}}>{{tf "Week %d" .}}</a>{{end}}</div>{{end}}
+  </div>
+  <div class="row">
+    <a class="btn" href="/plans/{{$d.Plan.ID}}/export.xlsx">{{t "Export to Excel"}}</a>
+    <form method="post" action="/plans/{{$d.Plan.ID}}/copy"><button class="btn">{{t "Duplicate plan"}}</button></form>
+    <form method="post" action="/plans/{{$d.Plan.ID}}/delete" class="row">
+      <label class="muted"><input type="checkbox" name="confirm" value="yes"> {{t "confirm"}}</label>
+      <button class="btn danger">{{t "Delete"}}</button>
+    </form>
+  </div>
+</div>
+
+<div class="kpis">
+  <div class="kpi {{if $d.Errors}}is-err{{else}}is-ok{{end}}"><b>{{$d.Errors}}</b><span class="muted">{{plural $d.Errors "error" "errors"}}</span></div>
+  <div class="kpi {{if $d.Warnings}}is-warn{{end}}"><b>{{$d.Warnings}}</b><span class="muted">{{plural $d.Warnings "warning" "warnings"}}</span></div>
+  <div class="kpi"><b>{{$d.Infos}}</b><span class="muted">{{plural $d.Infos "note" "notes"}}</span></div>
+  <div class="kpi"><b>{{len $d.Report.Results}}</b><span class="muted">{{plural (len $d.Report.Results) "rule checked" "rules checked"}}</span></div>
+</div>
+{{if $d.RuleErrors}}<div class="err">{{t "Some rules are not valid and were skipped."}} <a href="/rules">{{t "Rules"}}</a></div>{{end}}
+
+<form method="post" action="/plans/{{$d.Plan.ID}}/cells" id="cells">
+<input type="hidden" name="week" value="{{$d.Week}}">
+<div class="panel scroll">
+<table class="roster" data-step="{{.Org.Step}}" data-limits="{{$d.Limits}}">
+  <tr><th>{{t "Person"}}</th>
+    {{range $d.Heads}}<th class="lvl-{{.Level}}" title="{{range .Findings}}{{msg .}}&#10;{{end}}">{{day .Day}}{{if .Level}} ⚠{{end}}</th>{{end}}
+    <th class="num">{{t "Hours"}}</th><th class="num">{{t "Diff"}}</th></tr>
+  {{range $d.Blocks}}
+  <tr class="team"><td colspan="{{add (len $d.Heads) 3}}"><span class="dot" style="background:{{.Team.Color}}"></span>{{.Team.Name}}</td></tr>
+  {{range .Rows}}
+  <tr class="person" data-contract="{{printf "%d" .Person.WeeklyMinutes}}">
+    <td><a href="/staff/{{.Person.ID}}">{{.Person.Name}}</a>{{if .Person.IsFixed}} <span class="muted">({{t "fixed"}})</span>{{end}}</td>
+    {{range .Cells}}
+    <td class="cell lvl-{{.Level}}">
+      {{$c := .}}<input class="time" name="c_{{.Person}}_{{.Day.Key}}" value="{{.Time}}" placeholder="{{t "off"}}" autocomplete="off" inputmode="numeric" maxlength="11">
+      <div class="acts">{{range .Acts}}<label title="{{.Label}}"><input type="checkbox" tabindex="-1" name="a_{{$c.Person}}_{{$c.Day.Key}}" value="{{.ID}}" data-cell="{{$c.Person}}|{{$c.Day.Key}}" {{if .On}}checked{{end}}><span class="{{.Kind}}">{{.Code}}</span></label>{{end}}</div>
+      {{range .Findings}}<div class="finding">{{msg .}}</div>{{end}}
+    </td>
+    {{end}}
+    <td class="num hours">{{dur .Hours}}</td>
+    <td class="num diff">{{signed .Diff}}</td>
+  </tr>
+  {{end}}{{end}}
+</table>
+</div>
+<div class="savebar">
+  <button class="btn primary" id="save">{{t "Save"}}<span class="dirty" title="{{t "Unsaved changes"}}"></span></button>
+  <span class="muted">{{t "Type digits only, e.g. 08001530. Arrow keys adjust the hour or minutes under the cursor. Empty = day off."}} {{t "Enter saves."}}</span>
+  <span class="muted">{{range .Org.Activities}}<span class="badge {{.Kind}}">{{.Code}}</span> {{.Label}} &nbsp; {{end}}</span>
+</div>
+</form>
+
+<h2>{{t "Rule check"}}</h2>
+<div class="panel scroll">
+<table>
+  <tr><th>{{t "Status"}}</th><th>{{t "Rule"}}</th><th>{{t "Findings"}}</th></tr>
+  {{range $d.Report.Results}}
+  <tr><td><span class="status {{.Status}}">{{t .Status}}</span></td>
+      <td>{{.Rule.Label}}</td>
+      <td>{{if .Findings}}<ul class="findings">{{range .Findings}}<li><span class="status {{.Level}}">{{t .Level.String}}</span> {{if .Day}}<b>{{dayref .Day}}</b>: {{end}}{{msg .}}</li>{{end}}</ul>{{end}}</td></tr>
+  {{end}}
+  {{range $d.Report.Structural}}<tr><td><span class="status error">{{t "error"}}</span></td><td>{{t "Structure"}}</td><td>{{msg .}}</td></tr>{{end}}
+</table>
+</div>
+
+<h2>{{t "Coverage"}}{{if gt (len $d.Weeks) 1}} – {{tf "Week %d" $d.Week}}{{end}}</h2>
+<div class="panel scroll">
+  <p class="muted">{{t "People at work per 15 minutes. Red: nobody from that team while open. Faded: closed."}}</p>
+  {{range $d.Coverage}}
+  <table class="heat" style="margin-bottom:14px">
+    <tr><td class="label"><b>{{day .Day.Day}}</b></td></tr>
+    {{$open := .Open}}{{$slots := .Slots}}
+    {{range .Rows}}{{$max := .Max}}{{$color := .Color}}
+    <tr><td class="label">{{if eq .Label "Total"}}{{t "Total"}}{{else}}{{.Label}}{{end}}</td>
+      {{range $i, $n := .Counts}}<td class="{{if not (index $open $i)}}closed{{else if eq $n 0}}zero{{end}}" title="{{clock (index $slots $i)}} · {{$n}}"
+        {{if gt $n 0}}style="background: color-mix(in srgb, {{if $color}}{{$color}}{{else}}#4f46e5{{end}} {{heat $n $max}}, transparent)"{{end}}>{{if gt $n 0}}{{$n}}{{end}}</td>{{end}}
+    </tr>{{end}}
+    <tr><td class="label"></td>{{range $i, $t := .Slots}}<th>{{if isHour $t}}{{hour $t}}{{end}}</th>{{end}}</tr>
+  </table>
+  {{end}}
+</div>
+
+<div class="grid2">
+  <div>
+    <h2>{{t "Hours vs contract"}}</h2>
+    <div class="panel scroll">
+    <table>
+      <tr><th>{{t "Person"}}</th>{{range $d.Weeks}}<th class="num">{{tf "Week %d" .}}</th>{{end}}<th class="num">{{t "Contract"}}</th><th class="num">{{t "Diff"}}</th></tr>
+      {{range $d.Hours}}<tr><td>{{.Person.Name}}</td>{{range .Planned}}<td class="num">{{dur .}}</td>{{end}}<td class="num">{{dur .Contract}}</td><td class="num">{{signed .Total}}</td></tr>{{end}}
+    </table>
+    </div>
+  </div>
+  <div>
+    {{range $d.Fairness}}
+    <h2>{{t "Fairness"}} – {{.Metric}}</h2>
+    <div class="panel scroll">
+    <table>
+      <tr><th>{{t "Person"}}</th>{{range .Periods}}<th class="num">{{if eq . 0}}{{t "Cycle"}}{{else}}{{tf "Week %d" .}}{{end}}</th>{{end}}<th></th></tr>
+      {{$t := .}}
+      {{range .People}}<tr><td>{{($.Org.Person .).Name}}</td>
+        {{range index $t.Counts .}}<td class="num">{{.}}</td>{{end}}
+        <td>{{range index $t.Counts .}}<span class="bar" style="width:{{mul . 12}}px;margin-right:4px"></span>{{end}}</td></tr>{{end}}
+      <tr><th>{{t "Average per person"}}</th>{{range .Periods}}<th></th>{{end}}<th></th></tr>
+      {{range $team, $avg := .Teams}}<tr><td>{{($.Org.Team $team).Name}}</td>{{range $avg}}<td class="num">{{f2 .}}</td>{{end}}<td></td></tr>{{end}}
+    </table>
+    </div>
+    {{end}}
+  </div>
+</div>
+<script>
+// Time cells: digits only, separators shown while typing ("0800" -> "08:00-"),
+// arrow keys move the hour or minutes under the cursor.
+(function () {
+  var table = document.querySelector("table.roster");
+  if (!table) return;
+  var step = parseInt(table.dataset.step, 10) || 5;
+  var pad = function (n) { return (n < 10 ? "0" : "") + n; };
+  var fmt = function (m) { return pad(Math.floor(m / 60)) + ":" + pad(m % 60); };
+
+  // mask turns up to 8 digits into "HH:MM-HH:MM", adding separators as it goes.
+  function mask(digits) {
+    var d = digits.slice(0, 8), out = "";
+    for (var i = 0; i < d.length; i++) {
+      if (i === 2 || i === 6) out += ":";
+      if (i === 4) out += "-";
+      out += d[i];
+    }
+    if (d.length === 2 || d.length === 6) out += ":";
+    if (d.length === 4) out += "-";
+    return out;
+  }
+  function digitsBefore(v, pos) { return v.slice(0, pos).replace(/\D/g, "").length; }
+  function posAfterDigits(v, n) {
+    if (n === 0) return 0;
+    for (var i = 0, seen = 0; i < v.length; i++) if (/\d/.test(v[i]) && ++seen === n) return i + 1;
+    return v.length;
+  }
+  function parse(v) {
+    var m = /^(\d\d):(\d\d)-(\d\d):(\d\d)$/.exec(v);
+    if (!m) return null;
+    return {start: +m[1] * 60 + +m[2], end: +m[3] * 60 + +m[4]};
+  }
+  var isTime = function (el) { return el.tagName === "INPUT" && el.classList.contains("time"); };
+
+  // Offer an activity only where the rules still allow it.
+  var data = {limits: [], allowed: []};
+  try { data = JSON.parse(table.dataset.limits || "{}"); } catch (e) {}
+  var boxes = Array.prototype.slice.call(table.querySelectorAll(".acts input[type=checkbox]"));
+  // shaped returns the shift after applying a duty's times (null if unknown).
+  function shaped(f, cur) {
+    cur = cur || {start: -1, end: -1};
+    var start = f.start >= 0 ? f.start : cur.start;
+    var end = f.end >= 0 ? f.end : (f.length >= 0 && start >= 0 ? start + f.length : cur.end);
+    return start >= 0 && end > start ? {start: start, end: end} : null;
+  }
+  function fitsShift(f, shift) {
+    if (f.start >= 0 && shift.start !== f.start) return false;
+    if (f.end >= 0 && shift.end !== f.end) return false;
+    if (f.length >= 0 && shift.end - shift.start !== f.length) return false;
+    if (f.covers && (shift.start > f.covers[0] || shift.end < f.covers[1])) return false;
+    return true;
+  }
+  // propose suggests a shift for an empty cell that suits the activity,
+  // using the person's contract hours spread over the working days.
+  function propose(act, cell) {
+    var person = cell.split("|")[0], day = cell.split("|")[1];
+    var row = table.querySelector('input.time[name="c_' + person + '_' + day + '"]');
+    row = row && row.closest ? row.closest("tr") : null;
+    var days = row ? row.querySelectorAll("input.time").length : 5;
+    var contract = row ? parseInt(row.dataset.contract, 10) : 0;
+    var daily = contract > 0 ? Math.round(contract / days / step) * step : 7 * 60;
+    var open = (data.open || {})[day];
+    var s = null;
+    (data.fits || []).forEach(function (f) {
+      if (s || f.act !== act || f.cells.indexOf(cell) < 0) return;
+      if (f.apply) {
+        s = shaped(f, null);
+        if (!s && f.end >= 0) s = {start: f.end - daily, end: f.end};
+        if (!s && f.start >= 0) s = {start: f.start, end: f.start + daily};
+      } else if (f.covers) {
+        var end = Math.max(f.covers[0] + daily, f.covers[1]);
+        if (open && end > open[1]) end = open[1];
+        s = {start: Math.min(f.covers[0], end - daily), end: end};
+      }
+    });
+    if (!s) s = {start: open ? Math.max(open[0], 8 * 60) : 8 * 60, end: 0};
+    if (!s.end) s.end = s.start + daily;
+    return s.start >= 0 && s.end > s.start ? s : null;
+  }
+  function available(box) {
+    var act = box.value, cell = box.dataset.cell, person = cell.split("|")[0], day = cell.split("|")[1];
+    var ok = (data.allowed || []).every(function (a) {
+      return a.act !== act || a.day !== day || a.people.indexOf(person) >= 0;
+    });
+    if (!ok) return false;
+    // The shift this activity would give must fit it and every other
+    // activity already on the cell (e.g. opener and closer exclude each other).
+    var time = table.querySelector('input.time[name="c_' + person + '_' + day + '"]');
+    var shift = time ? parse(time.value) : null;
+    if (shift) {
+      (data.fits || []).forEach(function (f) {
+        if (f.apply && f.act === act && f.cells.indexOf(cell) >= 0) shift = shaped(f, shift);
+      });
+    } else {
+      shift = propose(act, cell);
+    }
+    if (!shift) return false;
+    var others = {};
+    boxes.forEach(function (b) { if (b.checked && b !== box && b.dataset.cell === cell) others[b.value] = true; });
+    var fits = (data.fits || []).every(function (f) {
+      if (f.cells.indexOf(cell) < 0 || !(f.act === act || others[f.act])) return true;
+      return fitsShift(f, shift);
+    });
+    if (!fits) return false;
+    var checked = {};
+    boxes.forEach(function (b) { if (b.checked && b.value === act && b !== box) checked[b.dataset.cell] = true; });
+    return (data.limits || []).every(function (l) {
+      if (l.act !== act || l.cells.indexOf(cell) < 0) return true;
+      var used = l.cells.filter(function (c) { return checked[c]; });
+      if (!l.days) return used.length < l.max;
+      var days = {};
+      used.forEach(function (c) { days[c.split("|")[1]] = true; });
+      return days[day] || Object.keys(days).length < l.max;
+    });
+  }
+  // Hours and difference per person, recalculated as times change.
+  function dur(m) {
+    var sign = m < 0 ? "-" : "";
+    m = Math.abs(m);
+    return sign + Math.floor(m / 60) + ":" + pad(m % 60);
+  }
+  function totals() {
+    table.querySelectorAll("tr.person").forEach(function (row) {
+      var sum = 0;
+      row.querySelectorAll("input.time").forEach(function (el) {
+        var c = parse(el.value);
+        if (c) sum += c.end - c.start;
+      });
+      var diff = sum - parseInt(row.dataset.contract, 10);
+      row.querySelector("td.hours").textContent = dur(sum);
+      row.querySelector("td.diff").textContent = (diff > 0 ? "+" : "") + dur(diff);
+    });
+  }
+  function refresh() {
+    totals();
+    boxes.forEach(function (b) { b.parentNode.classList.toggle("unavailable", !b.checked && !available(b)); });
+  }
+  // Choosing a duty sets the shift to the duty's times (e.g. opener 06:00-13:00).
+  function applyShape(box) {
+    var cell = box.dataset.cell, person = cell.split("|")[0], day = cell.split("|")[1];
+    var time = table.querySelector('input.time[name="c_' + person + '_' + day + '"]');
+    if (!time) return;
+    if (!parse(time.value)) {
+      var p = propose(box.value, cell);
+      if (p) {
+        box.dataset.before = time.value;
+        time.value = fmt(p.start) + "-" + fmt(p.end);
+        box.dataset.applied = time.value;
+      }
+      return;
+    }
+    (data.fits || []).forEach(function (f) {
+      if (!f.apply || f.act !== box.value || f.cells.indexOf(cell) < 0) return;
+      var next = shaped(f, parse(time.value));
+      if (next) {
+        box.dataset.before = time.value;
+        time.value = fmt(next.start) + "-" + fmt(next.end);
+        box.dataset.applied = time.value;
+      }
+    });
+  }
+  // Unchoosing a duty restores the time it replaced, unless it was edited since.
+  function undoShape(box) {
+    var cell = box.dataset.cell, person = cell.split("|")[0], day = cell.split("|")[1];
+    var time = table.querySelector('input.time[name="c_' + person + '_' + day + '"]');
+    if (time && box.dataset.applied !== undefined && time.value === box.dataset.applied) time.value = box.dataset.before;
+    delete box.dataset.before;
+    delete box.dataset.applied;
+  }
+  table.addEventListener("change", function (e) {
+    if (e.target.type !== "checkbox") return;
+    if (e.target.checked) applyShape(e.target); else undoShape(e.target);
+    refresh();
+  });
+  refresh();
+
+  // Unsaved-changes dot, a warning before leaving, and a clean submit.
+  var form = document.getElementById("cells");
+  if (form) {
+    var dirty = function () { form.classList.add("is-dirty"); };
+    form.addEventListener("input", dirty);
+    form.addEventListener("change", dirty);
+    form.addEventListener("submit", function () {
+      form.querySelectorAll("input.time").forEach(function (el) { el.value = el.value.replace(/[:\-]$/, ""); });
+      form.classList.remove("is-dirty");
+    });
+    window.addEventListener("beforeunload", function (e) {
+      if (form.classList.contains("is-dirty")) { e.preventDefault(); e.returnValue = ""; }
+    });
+  }
+
+  table.addEventListener("input", function (e) {
+    var el = e.target;
+    if (!isTime(el)) return;
+    var n = digitsBefore(el.value, el.selectionStart);
+    el.value = mask(el.value.replace(/\D/g, ""));
+    var p = posAfterDigits(el.value, n);
+    if (p === el.value.length - 1 && /[:\-]$/.test(el.value)) p = el.value.length;
+    el.setSelectionRange(p, p);
+    refresh();
+  });
+
+  table.addEventListener("focusout", function (e) {
+    var el = e.target;
+    if (isTime(el)) el.value = el.value.replace(/[:\-]$/, "");
+  });
+
+  table.addEventListener("keydown", function (e) {
+    var el = e.target;
+    if (!isTime(el)) return;
+    var pos = el.selectionStart;
+    // Backspace over a separator removes the digit before it.
+    if (e.key === "Backspace" && pos === el.selectionEnd && /[:\-]/.test(el.value[pos - 1] || "")) {
+      el.setSelectionRange(pos - 1, pos - 1);
+      return;
+    }
+    if (e.key !== "ArrowUp" && e.key !== "ArrowDown") return;
+    var c = parse(el.value);
+    if (!c) return;
+    e.preventDefault();
+    var dir = e.key === "ArrowUp" ? 1 : -1;
+    var amount = (pos <= 2 || (pos >= 6 && pos <= 8)) ? 60 : step;
+    if (pos <= 5) c.start = Math.max(0, Math.min(c.end - step, c.start + dir * amount));
+    else c.end = Math.max(c.start + step, Math.min(24 * 60, c.end + dir * amount));
+    el.value = fmt(c.start) + "-" + fmt(c.end);
+    el.setSelectionRange(pos, pos);
+    refresh();
+  });
+})();
+</script>
+{{end}}

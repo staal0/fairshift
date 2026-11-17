@@ -1,0 +1,51 @@
+{{define "content"}}
+{{$r := .D.R}}
+<p><a href="/rules">← {{t "Rules"}}</a></p>
+<h1>{{t .D.TypeName}}</h1>
+<p class="muted">{{t .D.Desc}}</p>
+<form method="post" action="/rules/{{if $r.ID}}{{$r.ID}}{{else}}new{{end}}" class="panel" style="max-width:900px">
+  <input type="hidden" name="type" value="{{$r.Type}}">
+  <div class="grid2">
+    <label class="field"><span>{{t "Name"}}</span><input name="label" value="{{$r.Label}}" required></label>
+    <label class="field"><span>{{t "Severity"}}</span>
+      <select name="severity">{{range .D.Severities}}<option value="{{.}}" {{if eq . $r.Severity}}selected{{end}}>{{t .}}</option>{{end}}</select></label>
+  </div>
+  <label class="checks"><label><input type="checkbox" name="enabled" {{if $r.Enabled}}checked{{end}}> {{t "Active"}}</label></label>
+  <hr style="border:0;border-top:1px solid var(--line);margin:16px 0">
+  {{range .D.Fields}}
+    {{if eq .Kind "bool"}}
+      <div class="field checks"><label><input type="checkbox" name="{{.Name}}" {{if .Value}}checked{{end}}> {{.Label}}</label></div>
+    {{else if eq .Kind "select"}}
+      <label class="field"><span>{{.Label}}</span>
+        <select name="{{.Name}}">{{$v := .Value}}{{range .Options}}<option value="{{.Value}}" {{if eq .Value $v}}selected{{end}}>{{.Label}}</option>{{end}}</select></label>
+    {{else if or (eq .Kind "weekdays") (eq .Kind "weeks") (eq .Kind "teams") (eq .Kind "people")}}
+      <div class="field"><span><b>{{.Label}}</b></span>
+        <div class="checks">{{$f := .}}{{range .Options}}<label><input type="checkbox" name="{{$f.Name}}" value="{{.Value}}" {{if index $f.Values .Value}}checked{{end}}> {{.Label}}</label>{{end}}</div></div>
+    {{else if eq .Kind "duty_schedule"}}
+      <div class="field"><span><b>{{.Label}}</b></span>
+        <table style="width:auto"><tr><th></th>{{range .Heads}}<th>{{.}}</th>{{end}}</tr>
+        {{range .Rows}}<tr><td>{{.Label}}</td>{{range .Cells}}<td><select name="{{.Name}}">{{$sel := .Selected}}{{range .Options}}<option value="{{.Value}}" {{if eq .Value $sel}}selected{{end}}>{{.Label}}</option>{{end}}</select></td>{{end}}</tr>{{end}}
+        </table></div>
+    {{else if eq .Kind "team_cover"}}
+      <div class="field"><span><b>{{.Label}}</b></span>
+        <table style="width:auto"><tr><th></th>{{range .Heads}}<th>{{.}}</th>{{end}}</tr>
+        {{range .Rows}}<tr><td>{{.Label}}</td>
+          {{with index .Cells 0}}<td class="checks">{{$c := .}}{{range .Options}}<label><input type="checkbox" name="{{$c.Name}}" value="{{.Value}}" {{if index $c.Values .Value}}checked{{end}}> {{.Label}}</label>{{end}}</td>{{end}}
+          {{with index .Cells 1}}<td><input name="{{.Name}}" value="{{.Value}}" type="number" min="0" style="width:80px"></td>{{end}}
+        </tr>{{end}}
+        </table></div>
+    {{else if eq .Kind "team_override"}}
+      <div class="field"><span><b>{{.Label}}</b></span>
+        <table style="width:auto"><tr><th></th>{{range .Heads}}<th>{{.}}</th>{{end}}</tr>
+        {{range .Rows}}<tr><td>{{.Label}}</td>{{range .Cells}}<td><input name="{{.Name}}" value="{{.Value}}"></td>{{end}}</tr>{{end}}
+        </table></div>
+    {{else}}
+      <label class="field"><span>{{.Label}}</span><input name="{{.Name}}" value="{{.Value}}" placeholder="{{.Hint}}"
+        {{if or (eq .Kind "int") (eq .Kind "float")}}inputmode="decimal" style="max-width:160px"{{end}}></label>
+    {{end}}
+  {{else}}
+    <p class="muted">{{t "This rule has no settings."}}</p>
+  {{end}}
+  <p><button class="btn primary">{{t "Save"}}</button></p>
+</form>
+{{end}}

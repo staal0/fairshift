@@ -1,0 +1,29 @@
+services:
+  db:
+    image: mysql:8.4
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: fairshift
+      MYSQL_USER: fairshift
+      MYSQL_PASSWORD: change-me
+      MYSQL_RANDOM_ROOT_PASSWORD: "yes"
+    volumes:
+      - db:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-ufairshift", "-pchange-me", "--silent"]
+      interval: 5s
+      retries: 30
+
+  fairshift:
+    image: ghcr.io/staal0/fairshift:latest
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      FAIRSHIFT_DSN: fairshift:change-me@tcp(db:3306)/fairshift
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  db:
