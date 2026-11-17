@@ -31,7 +31,7 @@ Change the `change-me` passwords in [compose.yaml](compose.yaml) first. fairshif
 Or run from source with Go 1.27+:
 
 ```sh
-make db       # MySQL 8.4 in a container
+make db       # MySQL (LTS) in a container
 make run      # http://127.0.0.1:8080
 ```
 
@@ -54,7 +54,7 @@ Early. Setup editors, rule editor, validator, plan editing, charts and Excel exp
 
 ## Stack
 
-Go · MySQL 8 · server-rendered UI (html/template) · English and Danish · Excel export with live formulas.
+Go · MySQL (LTS) · server-rendered UI (html/template) · English and Danish · Excel export with live formulas.
 
 ## License
 
