@@ -155,7 +155,7 @@ func (s *Server) plan(w http.ResponseWriter, r *http.Request) {
 				c := Cell{Person: pp.ID, Day: day}
 				sh, works := ro.Get(pp.ID, domain.DayRef{Week: wk, Day: day})
 				if works {
-					c.Time = sh.Window.String()
+					c.Time = sh.String()
 					pr.Hours += sh.Len()
 				}
 				for _, a := range o.Activities {

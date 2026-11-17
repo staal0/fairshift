@@ -105,7 +105,7 @@ func (r *teamEvent) Check(ctx *Context) []Violation {
 					if !s.Has(r.code) {
 						out = append(out, r.v("%s is not marked for %s's %s", name(o, p.ID), team.Name, r.label).at(d).who(p.ID).team(tid))
 					}
-					if !s.Covers(win) && !(r.P.ExemptFixed && p.IsFixed()) {
+					if !s.Covers(win) && (!r.P.ExemptFixed || !p.IsFixed()) {
 						out = append(out, r.v("%s works %s and misses part of %s's %s %s", name(o, p.ID), s.Window, team.Name, r.label, win).at(d).who(p.ID).team(tid))
 					}
 				}
@@ -120,7 +120,7 @@ func (r *teamEvent) Check(ctx *Context) []Violation {
 					for _, p := range o.Members(by) {
 						s, ok := ctx.Roster.Get(p.ID, d)
 						// A coverer in their own team's event at the same time doesn't count.
-						if ok && s.Covers(win) && !(s.Has(r.code) && contains(meetDaysTeams(meetDays, day), by)) {
+						if ok && s.Covers(win) && (!s.Has(r.code) || !contains(meetDaysTeams(meetDays, day), by)) {
 							n++
 						}
 					}

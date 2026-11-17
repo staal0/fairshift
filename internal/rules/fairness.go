@@ -38,16 +38,16 @@ func (m *Metric) compile() error {
 
 // Counts reports whether a worked shift on day d counts for the metric.
 func (m *Metric) Counts(s domain.Shift, d domain.DayRef) bool {
-	if m.StartBefore.Set && !(s.Start < m.StartBefore.Minute) {
+	if m.StartBefore.Set && s.Start >= m.StartBefore.Minute {
 		return false
 	}
-	if m.StartAfter.Set && !(s.Start > m.StartAfter.Minute) {
+	if m.StartAfter.Set && s.Start <= m.StartAfter.Minute {
 		return false
 	}
-	if m.EndAfter.Set && !(s.End > m.EndAfter.Minute) {
+	if m.EndAfter.Set && s.End <= m.EndAfter.Minute {
 		return false
 	}
-	if m.EndBefore.Set && !(s.End < m.EndBefore.Minute) {
+	if m.EndBefore.Set && s.End >= m.EndBefore.Minute {
 		return false
 	}
 	if m.Code != "" && !s.Has(m.Code) {

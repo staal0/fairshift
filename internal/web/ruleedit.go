@@ -262,12 +262,12 @@ func parseParams(o *domain.Org, typ string, form url.Values) (map[string]any, er
 	for _, f := range rules.Schemas[typ] {
 		name := "p." + f.Key
 		val := strings.TrimSpace(form.Get(name))
-		switch {
-		case f.Kind == rules.FBool:
+		switch f.Kind {
+		case rules.FBool:
 			if val != "" {
 				setPath(params, f.Key, true)
 			}
-		case f.Kind == rules.FInt:
+		case rules.FInt:
 			if val != "" {
 				n, err := strconv.Atoi(val)
 				if err != nil {
@@ -275,7 +275,7 @@ func parseParams(o *domain.Org, typ string, form url.Values) (map[string]any, er
 				}
 				setPath(params, f.Key, n)
 			}
-		case f.Kind == rules.FFloat:
+		case rules.FFloat:
 			if val != "" {
 				n, err := strconv.ParseFloat(strings.ReplaceAll(val, ",", "."), 64)
 				if err != nil {
@@ -283,7 +283,7 @@ func parseParams(o *domain.Org, typ string, form url.Values) (map[string]any, er
 				}
 				setPath(params, f.Key, n)
 			}
-		case f.Kind == rules.FClocks:
+		case rules.FClocks:
 			var list []any
 			for _, part := range strings.Split(val, ",") {
 				if part = strings.TrimSpace(part); part != "" {
@@ -293,7 +293,7 @@ func parseParams(o *domain.Org, typ string, form url.Values) (map[string]any, er
 			if len(list) > 0 {
 				setPath(params, f.Key, list)
 			}
-		case f.Kind == rules.FWeekdays || f.Kind == rules.FTeams || f.Kind == rules.FPeople:
+		case rules.FWeekdays, rules.FTeams, rules.FPeople:
 			if vs := form[name]; len(vs) > 0 {
 				list := make([]any, len(vs))
 				for i, v := range vs {
@@ -301,7 +301,7 @@ func parseParams(o *domain.Org, typ string, form url.Values) (map[string]any, er
 				}
 				setPath(params, f.Key, list)
 			}
-		case f.Kind == rules.FWeeks:
+		case rules.FWeeks:
 			var list []any
 			for _, v := range form[name] {
 				if n, err := strconv.Atoi(v); err == nil {
@@ -311,7 +311,7 @@ func parseParams(o *domain.Org, typ string, form url.Values) (map[string]any, er
 			if len(list) > 0 {
 				setPath(params, f.Key, list)
 			}
-		case f.Kind == rules.FDutySchedule:
+		case rules.FDutySchedule:
 			sched := map[string]any{}
 			for _, d := range o.Days {
 				var vals []string
@@ -344,7 +344,7 @@ func parseParams(o *domain.Org, typ string, form url.Values) (map[string]any, er
 			if len(sched) > 0 {
 				setPath(params, f.Key, sched)
 			}
-		case f.Kind == rules.FTeamCover:
+		case rules.FTeamCover:
 			cover := map[string]any{}
 			for _, tm := range o.Teams {
 				by := form["p.cover."+tm.ID+".by"]
@@ -372,7 +372,7 @@ func parseParams(o *domain.Org, typ string, form url.Values) (map[string]any, er
 			if len(cover) > 0 {
 				setPath(params, f.Key, cover)
 			}
-		case f.Kind == rules.FTeamOverride:
+		case rules.FTeamOverride:
 			ov := map[string]any{}
 			for _, tm := range o.Teams {
 				win := strings.TrimSpace(form.Get("p.team_overrides." + tm.ID + ".window"))

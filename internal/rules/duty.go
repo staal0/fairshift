@@ -2,7 +2,6 @@ package rules
 
 import (
 	"fmt"
-	"strings"
 
 	"github.com/staal0/fairshift/internal/domain"
 	"gopkg.in/yaml.v3"
@@ -31,22 +30,6 @@ type duty struct {
 type assignee struct {
 	rotation []string // len 1 = fixed person
 	pool     []string // nil + rotation nil = anyone
-}
-
-func (a assignee) describe(o *domain.Org) string {
-	switch {
-	case len(a.rotation) == 1:
-		return name(o, a.rotation[0])
-	case len(a.rotation) > 1:
-		var n []string
-		for _, p := range a.rotation {
-			n = append(n, name(o, p))
-		}
-		return "rotation " + strings.Join(n, "/")
-	case len(a.pool) > 0:
-		return "pool"
-	}
-	return "anyone"
 }
 
 func init() {

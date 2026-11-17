@@ -76,7 +76,7 @@ func withStore(fn func(*store.Store) error) error {
 	if err != nil {
 		return fmt.Errorf("database: %w", err)
 	}
-	defer st.Close()
+	defer func() { _ = st.Close() }()
 	if err := st.Migrate(context.Background()); err != nil {
 		return err
 	}

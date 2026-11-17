@@ -31,7 +31,7 @@ func init() {
 		if err := r.P.Scope.validate(o); err != nil {
 			return nil, err
 		}
-		return r, r.P.DaySel.compile()
+		return r, r.P.compile()
 	})
 }
 
@@ -39,7 +39,7 @@ func (r *shiftWindow) Check(ctx *Context) []Violation {
 	var out []Violation
 	o := ctx.Org
 	for _, p := range r.P.Scope.Select(o) {
-		for _, d := range r.P.DaySel.Select(o) {
+		for _, d := range r.P.Select(o) {
 			s, ok := ctx.Roster.Get(p.ID, d)
 			if !ok {
 				continue
@@ -113,14 +113,14 @@ func init() {
 		if err := r.P.Scope.validate(o); err != nil {
 			return nil, err
 		}
-		return r, r.P.DaySel.compile()
+		return r, r.P.compile()
 	})
 }
 
 func (r *timeSlotCount) Check(ctx *Context) []Violation {
 	var out []Violation
 	people := r.P.Scope.Select(ctx.Org)
-	for _, d := range r.P.DaySel.Select(ctx.Org) {
+	for _, d := range r.P.Select(ctx.Org) {
 		n := 0
 		for _, p := range people {
 			if s, ok := ctx.Roster.Get(p.ID, d); ok {

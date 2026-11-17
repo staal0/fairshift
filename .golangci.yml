@@ -16,4 +16,5 @@ linters:
         - (*database/sql.Tx).Rollback
         - (*bytes.Buffer).WriteTo
         - fmt.Fprint
+        - fmt.Fprintf
         - encoding/xml.EscapeText

@@ -30,7 +30,7 @@ func init() {
 		if err := r.P.Scope.validate(o); err != nil {
 			return nil, err
 		}
-		if err := r.P.DaySel.compile(); err != nil {
+		if err := r.P.compile(); err != nil {
 			return nil, err
 		}
 		if r.P.Window == "opening" || r.P.Window == "" {
@@ -52,7 +52,7 @@ func init() {
 func (r *coverage) Check(ctx *Context) []Violation {
 	var out []Violation
 	people := r.P.Scope.Select(ctx.Org)
-	for _, d := range r.P.DaySel.Select(ctx.Org) {
+	for _, d := range r.P.Select(ctx.Org) {
 		w := r.window
 		if r.opening {
 			ow, ok := ctx.Org.Opening[d.Day]

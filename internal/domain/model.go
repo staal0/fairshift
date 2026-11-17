@@ -256,7 +256,7 @@ func ParseCell(s string) (Shift, bool, error) {
 
 // FormatCell is the inverse of ParseCell (activity IDs as stored).
 func FormatCell(s Shift) string {
-	out := s.Window.String()
+	out := s.String()
 	if len(s.Acts) > 0 {
 		out += " (" + strings.Join(s.Acts, ",") + ")"
 	}
@@ -265,7 +265,7 @@ func FormatCell(s Shift) string {
 
 // DisplayCell formats a shift with display codes.
 func (o *Org) DisplayCell(s Shift) string {
-	out := s.Window.String()
+	out := s.String()
 	if len(s.Acts) > 0 {
 		var codes []string
 		for _, id := range s.Acts {

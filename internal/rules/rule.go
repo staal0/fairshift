@@ -92,11 +92,10 @@ func (b Base) v(format string, args ...any) Violation {
 	return Violation{Rule: b.RuleID, Level: b.level(), Message: fmt.Sprintf(format, args...), Format: format, Args: args}
 }
 
-func (v Violation) at(d domain.DayRef) Violation  { v.Day = &d; return v }
-func (v Violation) who(p string) Violation        { v.Person = p; return v }
-func (v Violation) team(t string) Violation       { v.Team = t; return v }
-func (v Violation) lvl(l Level) Violation         { v.Level = l; return v }
-func (v Violation) deviation(id string) Violation { v.Deviation = id; return v }
+func (v Violation) at(d domain.DayRef) Violation { v.Day = &d; return v }
+func (v Violation) who(p string) Violation       { v.Person = p; return v }
+func (v Violation) team(t string) Violation      { v.Team = t; return v }
+func (v Violation) lvl(l Level) Violation        { v.Level = l; return v }
 
 // Decoder decodes a rule's params into a typed struct (YAML, JSON …).
 type Decoder func(v any) error

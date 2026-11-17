@@ -163,12 +163,6 @@ func contains(list []string, s string) bool {
 	return false
 }
 
-// present reports whether the person works across the whole window that day.
-func present(r *domain.Roster, person string, d domain.DayRef, w domain.Window) bool {
-	s, ok := r.Get(person, d)
-	return ok && s.Covers(w)
-}
-
 // headcountGaps returns the sub-intervals of w where fewer than min (or more
 // than max, if max > 0) of the given people are working.
 func headcountGaps(r *domain.Roster, people []*domain.Person, d domain.DayRef, w domain.Window, min, max int) (under, over []domain.Window) {
