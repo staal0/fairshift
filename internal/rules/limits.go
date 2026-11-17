@@ -118,7 +118,7 @@ func (r *teamEvent) AddLimits(o *domain.Org, week int, l *Limits) {
 		for _, p := range o.Members(tid) {
 			for _, d := range o.Days {
 				cells = append(cells, cellKey(p.ID, d))
-				if !(r.P.ExemptFixed && p.IsFixed()) {
+				if !r.P.ExemptFixed || !p.IsFixed() {
 					mustCover = append(mustCover, cellKey(p.ID, d))
 				}
 			}
