@@ -3,7 +3,7 @@ module github.com/staal0/fairshift
 go 1.27
 
 require (
-  github.com/go-sql-driver/mysql v1.10.2
+  github.com/go-sql-driver/mysql v1.11.0
 	github.com/xuri/excelize/v2 v2.11.1
 	gopkg.in/yaml.v3 v3.0.1
 )
